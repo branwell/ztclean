@@ -28,7 +28,7 @@ Kermit the Frog: ` + lorem2 + `
 Fozzie Bear: ` + lorem3 + `
 `
 	want := "`Kermit the Frog:` " + lorem1 + " " + lorem2 + "\n\n**01:20**\n\n`Fozzie Bear:` " + lorem3 + "\n"
-	if got := Clean(in); got != want {
+	if got := Clean(in, true); got != want {
 		t.Errorf("got:\n%s\nwant:\n%s", got, want)
 	}
 }
@@ -49,7 +49,7 @@ Kermit the Frog: ` + lorem2 + `
 Kermit the Frog: ` + lorem3 + `
 `
 	want := lorem1 + " " + lorem2 + "\n\n**01:20**\n\n" + lorem3 + "\n"
-	if got := Clean(in); got != want {
+	if got := Clean(in, true); got != want {
 		t.Errorf("got:\n%s\nwant:\n%s", got, want)
 	}
 }
@@ -61,7 +61,26 @@ func TestCleanLongTurn(t *testing.T) {
 		"3\r\n00:05:01.000 --> 00:05:03.000\r\nA: three\r\n\r\n" +
 		"4\r\n00:06:00.000 --> 00:06:03.000\r\nB: four\r\n"
 	want := "`A:` one two\n\n**00:05**\n\nthree\n\n**00:06**\n\n`B:` four\n"
-	if got := Clean(in); got != want {
+	if got := Clean(in, true); got != want {
+		t.Errorf("got:\n%q\nwant:\n%q", got, want)
+	}
+}
+
+func TestCleanNoTimestamps(t *testing.T) {
+	in := "WEBVTT\n\n" +
+		"1\n00:00:01.000 --> 00:00:05.000\nA: one\n\n" +
+		"2\n00:05:01.000 --> 00:05:03.000\nA: two\n\n" +
+		"3\n00:06:00.000 --> 00:06:03.000\nB: three\n"
+	want := "`A:` one\n\ntwo\n\n`B:` three\n"
+	if got := Clean(in, false); got != want {
+		t.Errorf("got:\n%q\nwant:\n%q", got, want)
+	}
+
+	single := "WEBVTT\n\n" +
+		"1\n00:00:01.000 --> 00:00:02.000\nA: one\n\n" +
+		"2\n00:01:01.000 --> 00:01:02.000\nA: two\n"
+	want = "one\n\ntwo\n"
+	if got := Clean(single, false); got != want {
 		t.Errorf("got:\n%q\nwant:\n%q", got, want)
 	}
 }
@@ -71,7 +90,7 @@ func TestCleanMultilineAndUnlabeledCue(t *testing.T) {
 		"2\n00:00:02.000 --> 00:00:03.000\nstill A\n\n" +
 		"3\n00:00:03.000 --> 00:00:04.000\nB: hi\n"
 	want := "`A:` first line still A\n\n**00:00**\n\n`B:` hi\n"
-	if got := Clean(in); got != want {
+	if got := Clean(in, true); got != want {
 		t.Errorf("got:\n%q\nwant:\n%q", got, want)
 	}
 }
@@ -107,7 +126,7 @@ func TestRunRefusesToOverwriteInput(t *testing.T) {
 	if err := os.WriteFile(in, []byte("original"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := run(in, ""); err == nil {
+	if err := run(in, "", true); err == nil {
 		t.Error("expected an error when output equals input")
 	}
 	if got, _ := os.ReadFile(in); string(got) != "original" {
@@ -121,7 +140,7 @@ func TestRun(t *testing.T) {
 	if err := os.WriteFile(in, []byte("WEBVTT\n\n1\n00:00:01.000 --> 00:00:02.000\nA: hi\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := run(in, ""); err != nil {
+	if err := run(in, "", true); err != nil {
 		t.Fatal(err)
 	}
 	got, err := os.ReadFile(filepath.Join(dir, "t.md"))

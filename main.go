@@ -12,19 +12,20 @@ import (
 func main() {
 	in := flag.String("f", "", "input .vtt transcript (required)")
 	out := flag.String("o", "", "output .md file (default: input name with .md extension)")
+	noStamps := flag.Bool("t", false, "omit hh:mm timestamps (paragraph breaks are kept)")
 	flag.Parse()
 
 	if *in == "" || flag.NArg() > 0 {
 		flag.Usage()
 		os.Exit(2)
 	}
-	if err := run(*in, *out); err != nil {
+	if err := run(*in, *out, !*noStamps); err != nil {
 		fmt.Fprintln(os.Stderr, "ztclean:", err)
 		os.Exit(1)
 	}
 }
 
-func run(in, out string) error {
+func run(in, out string, stamps bool) error {
 	out = outputPath(in, out)
 	if filepath.Clean(out) == filepath.Clean(in) {
 		return fmt.Errorf("output file %q would overwrite the input", out)
@@ -33,7 +34,7 @@ func run(in, out string) error {
 	if err != nil {
 		return fmt.Errorf("read transcript: %w", err)
 	}
-	if err := os.WriteFile(out, []byte(Clean(string(data))), 0o644); err != nil {
+	if err := os.WriteFile(out, []byte(Clean(string(data), stamps)), 0o644); err != nil {
 		return fmt.Errorf("write markdown: %w", err)
 	}
 	return nil

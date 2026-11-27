@@ -4,6 +4,7 @@ This is a small command-line tool to clean up zoom transcripts.
 
 Command: `ztclean -f <filename>`
 Optional specification of output file: `ztclean -f <filename> -o foo.md` otherwise default is output file is the same as the filename, replace .vtt with .md
+Optional `-t`: omit all hh:mm timestamps. Paragraphs are split exactly as without it; only the timestamp lines are left out. Without `-t`, timestamps are included as described below.
 (Standard Go flag syntax, so `-f=<filename>` also works.)
 
 ## Cleanup Rules
@@ -86,7 +87,8 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
 
 - **Speaker label:** wrapped in backticks (`` `Name:` ``), matching the sample output.
 - **Unicode to ASCII:** a hand-written lookup table (smart quotes, dashes, ellipsis, special spaces, common symbols, accented Latin letters). Any other non-ASCII character is dropped. No external library.
-- **Command line:** Go standard `flag` package; `-f` is required, `-o` is optional.
+- **Command line:** Go standard `flag` package; `-f` is required, `-o` and `-t` are optional.
+- **No-timestamp mode (`-t`):** a boolean flag, off by default. It affects rendering only: paragraphs are grouped by the same rules, and the `**hh:mm**` lines are not written.
 - **Timestamps:** formatted as `**hh:mm**` on their own line, from the start time of the cue that begins the new paragraph. No timestamp before the first paragraph.
   - One speaker: a new paragraph and timestamp whenever the cue start minute changes.
   - Several speakers: a new paragraph and timestamp on each speaker change, and also at the first cue starting 5 or more minutes after the current paragraph began. The speaker label is not repeated on that continuation paragraph.

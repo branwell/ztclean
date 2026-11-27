@@ -26,10 +26,12 @@ type paragraph struct {
 }
 
 // Clean converts the contents of a Zoom .vtt transcript into Markdown.
-func Clean(vtt string) string {
+// If stamps is false, the hh:mm timestamp lines are left out; paragraph
+// breaks are unchanged.
+func Clean(vtt string, stamps bool) string {
 	cues := parseCues(toASCII(vtt))
 	paras := group(cues)
-	return render(paras)
+	return render(paras, stamps)
 }
 
 // parseCues extracts the cues from a WebVTT document, dropping the header,
@@ -152,10 +154,10 @@ func hhmm(d time.Duration) string {
 	return fmt.Sprintf("%02d:%02d", m/60, m%60)
 }
 
-func render(paras []paragraph) string {
+func render(paras []paragraph, stamps bool) string {
 	var blocks []string
 	for _, p := range paras {
-		if p.stamp {
+		if stamps && p.stamp {
 			blocks = append(blocks, "**"+hhmm(p.start)+"**")
 		}
 		body := strings.Join(p.text, " ")
